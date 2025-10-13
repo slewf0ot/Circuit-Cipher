@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ciphered Circuit — Virtual Logbook (AD8AJ)</title>
+<style>
+  :root{--bg:#0a0f14;--panel:#0d1218;--primary:#20ffe3;--accent:#ff5d73;--muted:#7bd4c9;--ok:#76ffa8;}
+  html,body{margin:0;padding:0;background:var(--bg);color:#e8fff9;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
+  .wrap{max-width:760px;margin:0 auto;padding:24px;}
+  .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .badge{display:flex;align-items:center;gap:12px;}
+  .badge .sig{width:58px;height:58px;border-radius:50%;background:radial-gradient(120% 120% at 30% 25%, #1ce4cb 0%, #0bb2a0 60%, #06635b 100%);
+    border:2px solid rgba(32,255,227,.6); box-shadow:0 0 18px rgba(32,255,227,.35), inset 0 0 12px rgba(0,0,0,.4); position:relative; overflow:hidden;}
+  .badge .sig:before, .badge .sig:after{
+    content:""; position:absolute; inset:0; background:
+      repeating-linear-gradient(180deg, rgba(0,0,0,.16) 0 2px, transparent 2px 4px);
+    mix-blend-mode:overlay; opacity:.8; pointer-events:none;
+  }
+  .badge .text{line-height:1.1}
+  .badge .title{font-weight:800;letter-spacing:.08em;color:var(--primary);text-shadow:0 0 10px rgba(32,255,227,.45)}
+  .badge .sub{color:#9feee2;font-size:.9rem}
+  .card{background:linear-gradient(145deg,var(--panel),#0a1017);border:1px solid rgba(32,255,227,.25);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5),inset 0 0 24px rgba(32,255,227,.06);padding:18px;}
+  .intro{color:#9feee2;margin:6px 0 14px;text-shadow:0 0 6px rgba(32,255,227,.25);}
+  label{display:block;font-size:.95rem;color:var(--muted);margin:10px 0 6px;}
+  input[type=text],input[type=date],textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(32,255,227,.25);background:#0b1218;color:#dffef7;box-sizing:border-box;}
+  textarea{min-height:110px;resize:vertical;}
+  .row{display:flex;gap:12px;flex-wrap:wrap;}
+  .row>div{flex:1 1 220px;}
+  button{margin-top:12px;border:1px solid rgba(32,255,227,.6);background:linear-gradient(160deg,rgba(32,255,227,.18),rgba(32,255,227,.06));color:#bafff3;padding:10px 16px;border-radius:999px;font-size:1rem;font-weight:800;cursor:pointer;letter-spacing:.04em;}
+  .status{margin-top:10px;color:var(--muted);min-height:1.2rem}
+  .small{font-size:.85rem;color:#87e9dc;margin-top:12px;}
+  .hint{margin-top:18px;border-top:1px solid rgba(32,255,227,.25);padding-top:12px;color:#9feee2;text-align:center;}
+  /* Success toast */
+  .toast{position:fixed;left:50%;top:18px;transform:translateX(-50%) scale(.95);background:#0c161a;border:1px solid rgba(118,255,168,.6);color:#dcffef;
+    padding:10px 14px;border-radius:12px;box-shadow:0 14px 30px rgba(0,0,0,.5),0 0 30px rgba(118,255,168,.25);
+    display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:.35s ease; z-index:9999;}
+  .toast.show{opacity:1;transform:translateX(-50%) scale(1);}
+  .pulse{width:18px;height:18px;border:2px solid var(--ok);border-radius:50%;position:relative;}
+  .pulse:after{content:"";position:absolute;inset:-6px;border:2px solid rgba(118,255,168,.45);border-radius:50%;animation:pulse 1.3s ease-out infinite;}
+  @keyframes pulse{0%{opacity:1;transform:scale(.6);}100%{opacity:0;transform:scale(1.3);}}
+  /* Footer banner */
+  .footer{margin-top:16px;display:flex;justify-content:space-between;color:#7bd4c9;font-size:.9rem;opacity:.9}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="badge">
+      <div class="sig" aria-hidden="true"></div>
+      <div class="text">
+        <div class="title mono">CIPHERED CIRCUIT</div>
+        <div class="sub mono">AD8AJ • BUREAU OF FIELD COMMUNICATIONS</div>
+      </div>
+    </div>
+    <div class="mono" style="color:#9feee2; text-align:right;">Virtual Logbook</div>
+  </div>
+
+  <div class="card">
+    <p class="intro mono">Log your find or progress. If you’re offline, your entry will queue and transmit automatically when back online.</p>
+    <form id="logForm">
+      <div class="row">
+        <div>
+          <label for="handle">Geocaching Handle</label>
+          <input id="handle" name="handle" type="text" placeholder="e.g., AD8AJ" required>
+        </div>
+        <div>
+          <label for="date">Date</label>
+          <input id="date" name="date" type="date" required>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="stage">Stage</label>
+          <select id="stage" name="stage">
+            <option>Stage 1</option>
+            <option>Stage 2</option>
+            <option>Final</option>
+          </select>
+        </div>
+        <div>
+          <label for="rating">Signal Strength</label>
+          <select id="rating" name="rating">
+            <option>5/5 — Loud & Clear</option>
+            <option>4/5 — Solid Copy</option>
+            <option>3/5 — Some Static</option>
+            <option>2/5 — Fading</option>
+            <option>1/5 — Barely Audible</option>
+          </select>
+        </div>
+      </div>
+      <label for="message">Message</label>
+      <textarea id="message" name="message" placeholder="Leave a field note for the Operator…"></textarea>
+      <input type="hidden" id="tz" name="tz">
+      <button type="submit">Transmit Log</button>
+      <div class="status mono" id="status"></div>
+      <div class="small mono">Tip: Append <code>?stage=Final</code> to this page URL to preselect the Final stage.</div>
+    </form>
+    <div class="hint mono">Thank you for keeping the Ciphered Circuit operational. — Control</div>
+    <div class="footer mono"><div>Callsign: AD8AJ</div><div>Sector: Grand Haven</div></div>
+  </div>
+</div>
+
+<div class="toast mono" id="toast"><div class="pulse" aria-hidden="true"></div><div>Transmission Sent — Log received. Thank you, Operator.</div></div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1BxcsdgjfkmXiQL2SNFDa7l44VYoVxGdU1tY-IChkzbadNChuVL2yPQFviiwrnE54qw/exec"; // Replace with your Apps Script Web App URL
+const form = document.getElementById('logForm');
+const statusEl = document.getElementById('status');
+const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+document.getElementById('tz').value = tz;
+document.getElementById('date').valueAsNumber = Date.now() - (new Date()).getTimezoneOffset()*60*1000;
+
+// Preselect stage via URL param (?stage=Final, ?stage=Stage%202, etc.)
+(function initStageFromQuery(){
+  const p = new URLSearchParams(location.search);
+  const s = p.get('stage');
+  if(!s) return;
+  const sel = document.getElementById('stage');
+  [...sel.options].forEach(o=>{ if(o.text.toLowerCase()===s.toLowerCase()) sel.value=o.text; });
+})();
+
+function queueLog(entry){ 
+  const q = JSON.parse(localStorage.getItem('cc_queue')||'[]');
+  q.push(entry);
+  localStorage.setItem('cc_queue', JSON.stringify(q));
+}
+
+async function flushQueue(){
+  const q = JSON.parse(localStorage.getItem('cc_queue')||'[]');
+  if(!q.length) return;
+  const rem=[];
+  for(const entry of q){
+    try{ 
+      await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(entry) });
+    }catch(e){ rem.push(entry); }
+  }
+  localStorage.setItem('cc_queue', JSON.stringify(rem));
+}
+
+function showToast(){
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+window.addEventListener('online', flushQueue);
+setTimeout(flushQueue, 1200);
+
+form.addEventListener('submit', async (e)=>{ 
+  e.preventDefault();
+  statusEl.textContent = "Transmitting…";
+  const data = Object.fromEntries(new FormData(form).entries());
+  data.whenISO = new Date().toISOString();
+  data.userAgent = navigator.userAgent;
+  try{
+    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    statusEl.textContent = "Log received. Thank you, Operator.";
+    showToast();
+    form.reset();
+    document.getElementById('date').valueAsNumber = Date.now() - (new Date()).getTimezoneOffset()*60*1000;
+    document.getElementById('tz').value = tz;
+  }catch(err){
+    statusEl.textContent = "Offline or server unavailable — log queued and will auto-transmit.";
+    queueLog(data);
+  }
+});
+</script>
+</body>
+</html>

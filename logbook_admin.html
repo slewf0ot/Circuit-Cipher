@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ciphered Circuit — Logbook Viewer</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#0a0f14;color:#e8fff9;margin:0;padding:20px;}
+  h1{color:#20ffe3;text-shadow:0 0 6px rgba(32,255,227,.5);}
+  table{width:100%;border-collapse:collapse;margin-top:12px;}
+  th,td{border:1px solid rgba(32,255,227,.25);padding:8px;vertical-align:top;}
+  th{background:#0f151d;color:#9feee2;}
+  tr:nth-child(even) td{background:#0d1218;}
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  input,select,button{padding:8px;border-radius:8px;border:1px solid rgba(32,255,227,.25);background:#0b1218;color:#dffef7;}
+</style>
+</head>
+<body>
+  <h1>Ciphered Circuit — Recent Logs</h1>
+  <div class="controls">
+    <label>Endpoint URL <input id="endpoint" size="80" value="https://script.google.com/macros/s/AKfycbz1BxcsdgjfkmXiQL2SNFDa7l44VYoVxGdU1tY-IChkzbadNChuVL2yPQFviiwrnE54qw/exec"></label>
+    <button id="refresh">Refresh</button>
+    <label>Limit <input id="limit" type="number" value="50" min="1" max="500" style="width:80px"></label>
+    <label>Stage 
+      <select id="stage">
+        <option value="">All</option>
+        <option>Stage 1</option>
+        <option>Stage 2</option>
+        <option>Final</option>
+      </select>
+    </label>
+  </div>
+  <table id="tbl">
+    <thead><tr><th>When (ISO)</th><th>Handle</th><th>Date</th><th>Stage</th><th>Signal</th><th>Message</th><th>Time Zone</th></tr></thead>
+    <tbody></tbody>
+  </table>
+<script>
+async function load(){
+  const ep = document.getElementById('endpoint').value;
+  const limit = document.getElementById('limit').value||50;
+  const stage = document.getElementById('stage').value;
+  const url = ep + "?list=true&limit=" + encodeURIComponent(limit) + (stage?("&stage="+encodeURIComponent(stage)):"");
+  const res = await fetch(url);
+  const data = await res.json();
+  const tbody = document.querySelector('#tbl tbody'); tbody.innerHTML = "";
+  data.forEach(row => { 
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.whenISO||""}</td><td>${row.handle||""}</td><td>${row.date||""}</td><td>${row.stage||""}</td><td>${row.rating||""}</td><td>${(row.message||"").replace(/</g,'&lt;')}</td><td>${row.tz||""}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+document.getElementById('refresh').addEventListener('click', load);
+load();
+</script>
+</body>
+</html>
