@@ -31,7 +31,8 @@
   .status{margin-top:10px;color:var(--muted);min-height:1.2rem}
   .small{font-size:.85rem;color:#87e9dc;margin-top:12px;}
   .hint{margin-top:18px;border-top:1px solid rgba(32,255,227,.25);padding-top:12px;color:#9feee2;text-align:center;}
-  /* Success toast */
+  .footer{margin-top:16px;display:flex;justify-content:space-between;color:#7bd4c9;font-size:.9rem;opacity:.9}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .toast{position:fixed;left:50%;top:18px;transform:translateX(-50%) scale(.95);background:#0c161a;border:1px solid rgba(118,255,168,.6);color:#dcffef;
     padding:10px 14px;border-radius:12px;box-shadow:0 14px 30px rgba(0,0,0,.5),0 0 30px rgba(118,255,168,.25);
     display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:.35s ease; z-index:9999;}
@@ -39,9 +40,6 @@
   .pulse{width:18px;height:18px;border:2px solid var(--ok);border-radius:50%;position:relative;}
   .pulse:after{content:"";position:absolute;inset:-6px;border:2px solid rgba(118,255,168,.45);border-radius:50%;animation:pulse 1.3s ease-out infinite;}
   @keyframes pulse{0%{opacity:1;transform:scale(.6);}100%{opacity:0;transform:scale(1.3);}}
-  /* Footer banner */
-  .footer{margin-top:16px;display:flex;justify-content:space-between;color:#7bd4c9;font-size:.9rem;opacity:.9}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 </style>
 </head>
 <body>
@@ -95,6 +93,7 @@
       <input type="hidden" id="tz" name="tz">
       <button type="submit">Transmit Log</button>
       <div class="status mono" id="status"></div>
+      <div class="small mono">Tip: Append <code>?stage=Final</code> to this page URL to preselect the Final stage.</div>
     </form>
     <div class="hint mono">Thank you for keeping the Ciphered Circuit operational. — Control</div>
     <div class="footer mono"><div>Callsign: AD8AJ</div><div>Sector: Grand Haven</div></div>
@@ -111,7 +110,6 @@ const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 document.getElementById('tz').value = tz;
 document.getElementById('date').valueAsNumber = Date.now() - (new Date()).getTimezoneOffset()*60*1000;
 
-// Preselect stage via URL param (?stage=Final, ?stage=Stage%202, etc.)
 (function initStageFromQuery(){
   const p = new URLSearchParams(location.search);
   const s = p.get('stage');
@@ -132,7 +130,8 @@ async function flushQueue(){
   const rem=[];
   for(const entry of q){
     try{ 
-      await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(entry) });
+      const payload = new URLSearchParams({ payload: JSON.stringify(entry) });
+      await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body: payload.toString() });
     }catch(e){ rem.push(entry); }
   }
   localStorage.setItem('cc_queue', JSON.stringify(rem));
@@ -154,15 +153,20 @@ form.addEventListener('submit', async (e)=>{
   data.whenISO = new Date().toISOString();
   data.userAgent = navigator.userAgent;
   try{
-    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    const payload = new URLSearchParams({ payload: JSON.stringify(data) });
+    const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body: payload.toString() });
+    if(!res.ok) {
+      const text = await res.text();
+      throw new Error('HTTP ' + res.status + ' — ' + text);
+    }
     statusEl.textContent = "Log received. Thank you, Operator.";
     showToast();
     form.reset();
     document.getElementById('date').valueAsNumber = Date.now() - (new Date()).getTimezoneOffset()*60*1000;
     document.getElementById('tz').value = tz;
   }catch(err){
-    statusEl.textContent = "Offline or server unavailable — log queued and will auto-transmit.";
+    console.error(err);
+    statusEl.textContent = "Offline or server unavailable — log queued and will auto-transmit. Details: " + err.message;
     queueLog(data);
   }
 });
